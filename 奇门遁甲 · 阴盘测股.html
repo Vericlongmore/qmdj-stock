@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<!-- saved from url=(0101)file:///D:/workspace/java/gitlab.sh.sensense.com/STD/cogprojects/cognitivesvc-kestrel/qmdj-stock.html -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奇门遁甲 · 阴盘测股</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700;900&family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --cyan: #00f0ff;
+  --magenta: #ff00ff;
+  --gold: #ffd700;
+  --red: #ff2244;
+  --green: #00ff88;
+  --dark: #0a0a12;
+  --darker: #050510;
+  --grid: rgba(0,240,255,0.06);
+  --glow-cyan: 0 0 10px #00f0ff, 0 0 30px rgba(0,240,255,0.3);
+  --glow-magenta: 0 0 10px #ff00ff, 0 0 30px rgba(255,0,255,0.3);
+  --glow-gold: 0 0 10px #ffd700, 0 0 30px rgba(255,215,0,0.3);
+  --glow-red: 0 0 10px #ff2244, 0 0 30px rgba(255,34,68,0.3);
+  --glow-green: 0 0 10px #00ff88, 0 0 30px rgba(0,255,136,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--darker);
+  color: #e0e0e0;
+  font-family: 'Noto Sans SC', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.015) 2px,
+    rgba(0,240,255,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Grid background */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ============ HEADER ============ */
+.header {
+  text-align: center;
+  padding: 60px 0 40px;
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
+}
+
+.bagua-symbol {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+  border: 2px solid var(--cyan);
+  border-radius: 50%;
+  position: relative;
+  animation: rotate-slow 20s linear infinite, pulse-glow 3s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bagua-symbol::before {
+  content: '☯';
+  font-size: 60px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.bagua-symbol::after {
+  content: '';
+  position: absolute;
+  top: -3px; left: -3px; right: -3px; bottom: -3px;
+  border: 1px solid rgba(255,0,255,0.3);
+  border-radius: 50%;
+  animation: rotate-slow 15s linear infinite reverse;
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,240,255,0.3), inset 0 0 20px rgba(0,240,255,0.1); }
+  50% { box-shadow: 0 0 40px rgba(0,240,255,0.6), inset 0 0 30px rgba(0,240,255,0.2); }
+}
+
+.title-main {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 900;
+  letter-spacing: 8px;
+  background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.title-sub {
+  font-size: 14px;
+  color: rgba(0,240,255,0.7);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* ============ VERDICT BANNER ============ */
+.verdict-banner {
+  margin: 40px 0;
+  padding: 30px;
+  border: 2px solid;
+  position: relative;
+  text-align: center;
+  animation: border-flicker 4s ease-in-out infinite;
+}
+
+.verdict-danger {
+  border-color: var(--red);
+  background: linear-gradient(135deg, rgba(255,34,68,0.08), rgba(255,0,255,0.05));
+}
+
+.verdict-danger::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,34,68,0.1) 0%, transparent 70%);
+  animation: pulse-bg 3s ease-in-out infinite;
+}
+
+@keyframes border-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+}
+
+@keyframes pulse-bg {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.verdict-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.verdict-text {
+  font-size: clamp(24px, 4vw, 40px);
+  font-weight: 900;
+  letter-spacing: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.verdict-danger .verdict-text {
+  color: var(--red);
+  text-shadow: var(--glow-red);
+  animation: text-glitch 5s ease-in-out infinite;
+}
+
+@keyframes text-glitch {
+  0%, 100% { text-shadow: 0 0 10px #ff2244, 0 0 30px rgba(255,34,68,0.5); }
+  2% { text-shadow: -2px 0 #ff00ff, 2px 0 #00f0ff, 0 0 30px rgba(255,34,68,0.5); }
+  4% { text-shadow: 0 0 10px #ff2244, 0 0 30px rgba(255,34,68,0.5); }
+  40% { text-shadow: 0 0 10px #ff2244, 0 0 30px rgba(255,34,68,0.5); }
+  42% { text-shadow: 3px 0 #00f0ff, -3px 0 #ff00ff, 0 0 30px rgba(255,34,68,0.5); }
+  44% { text-shadow: 0 0 10px #ff2244, 0 0 30px rgba(255,34,68,0.5); }
+}
+
+.verdict-desc {
+  font-size: 14px;
+  color: rgba(255,34,68,0.8);
+  margin-top: 12px;
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============ INFO PANEL ============ */
+.info-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 30px 0;
+}
+
+.info-item {
+  background: rgba(0,240,255,0.03);
+  border: 1px solid rgba(0,240,255,0.15);
+  padding: 15px 12px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.info-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan-line 3s ease-in-out infinite;
+}
+
+@keyframes scan-line {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.info-item:hover {
+  border-color: var(--cyan);
+  background: rgba(0,240,255,0.08);
+  transform: translateY(-2px);
+}
+
+.info-label {
+  font-size: 10px;
+  color: rgba(0,240,255,0.6);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.info-value {
+  font-size: 16px;
+  color: var(--cyan);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0,240,255,0.4);
+}
+
+/* ============ SECTION HEADERS ============ */
+.section {
+  margin: 40px 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.section-number {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  line-height: 1;
+  min-width: 50px;
+}
+
+.section-number.red { color: var(--red); text-shadow: var(--glow-red); }
+.section-number.gold { color: var(--gold); text-shadow: var(--glow-gold); }
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #fff;
+}
+
+.section-title.red { color: rgba(255,34,68,0.9); }
+.section-title.gold { color: var(--gold); }
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+}
+
+.section-line.red { background: linear-gradient(90deg, var(--red), transparent); }
+.section-line.gold { background: linear-gradient(90deg, var(--gold), transparent); }
+
+/* ============ DIVINATION TABLE ============ */
+.div-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+.div-table thead th {
+  background: rgba(0,240,255,0.1);
+  border: 1px solid rgba(0,240,255,0.2);
+  padding: 12px 10px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+}
+
+.div-table tbody td {
+  padding: 10px;
+  border: 1px solid rgba(0,240,255,0.08);
+  font-size: 13px;
+  text-align: center;
+  background: rgba(0,240,255,0.015);
+  transition: all 0.2s ease;
+}
+
+.div-table tbody tr:hover td {
+  background: rgba(0,240,255,0.06);
+  border-color: rgba(0,240,255,0.2);
+}
+
+.div-table tbody tr.danger td {
+  background: rgba(255,34,68,0.06);
+  border-color: rgba(255,34,68,0.15);
+}
+
+.div-table tbody tr.danger:hover td {
+  background: rgba(255,34,68,0.12);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.badge-danger {
+  background: rgba(255,34,68,0.2);
+  color: var(--red);
+  border: 1px solid rgba(255,34,68,0.4);
+  text-shadow: 0 0 6px rgba(255,34,68,0.5);
+}
+
+.badge-warning {
+  background: rgba(255,215,0,0.15);
+  color: var(--gold);
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
+.badge-info {
+  background: rgba(0,240,255,0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0,240,255,0.2);
+}
+
+.badge-green {
+  background: rgba(0,255,136,0.1);
+  color: var(--green);
+  border: 1px solid rgba(0,255,136,0.3);
+}
+
+/* ============ CARD GRID ============ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 15px 0;
+}
+
+.card {
+  background: rgba(10,10,20,0.8);
+  border: 1px solid rgba(0,240,255,0.12);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.card:hover {
+  border-color: rgba(0,240,255,0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 30px rgba(0,240,255,0.1);
+}
+
+.card.danger-card {
+  border-color: rgba(255,34,68,0.2);
+}
+
+.card.danger-card::before {
+  background: linear-gradient(90deg, transparent, var(--red), transparent);
+}
+
+.card.danger-card:hover {
+  border-color: rgba(255,34,68,0.4);
+  box-shadow: 0 5px 30px rgba(255,34,68,0.1);
+}
+
+.card.gold-card {
+  border-color: rgba(255,215,0,0.2);
+}
+
+.card.gold-card::before {
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.card-title {
+  font-size: 14px;
+  letter-spacing: 3px;
+  color: var(--cyan);
+  margin-bottom: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.card.danger-card .card-title { color: var(--red); }
+.card.gold-card .card-title { color: var(--gold); }
+
+.card-content {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.card-content .label {
+  color: rgba(0,240,255,0.6);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.card.danger-card .card-content .label {
+  color: rgba(255,34,68,0.6);
+}
+
+.card.gold-card .card-content .label {
+  color: rgba(255,215,0,0.6);
+}
+
+.card-content .value {
+  color: #fff;
+  font-weight: 700;
+}
+
+.card-content .value.danger { color: var(--red); text-shadow: 0 0 6px rgba(255,34,68,0.4); }
+.card-content .value.gold { color: var(--gold); text-shadow: 0 0 6px rgba(255,215,0,0.4); }
+.card-content .value.cyan { color: var(--cyan); text-shadow: 0 0 6px rgba(0,240,255,0.4); }
+.card-content .value.green { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.4); }
+
+/* ============ SUITABILITY CHECK ============ */
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,34,68,0.04);
+  border: 1px solid rgba(255,34,68,0.15);
+  transition: all 0.3s ease;
+}
+
+.check-item:hover {
+  background: rgba(255,34,68,0.08);
+  border-color: rgba(255,34,68,0.3);
+}
+
+.check-icon {
+  font-size: 22px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.check-icon.fail { color: var(--red); text-shadow: var(--glow-red); }
+.check-icon.pass { color: var(--green); text-shadow: var(--glow-green); }
+
+.check-text {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.check-result {
+  font-weight: 700;
+  color: var(--red);
+  text-shadow: 0 0 6px rgba(255,34,68,0.4);
+}
+
+.check-result.pass { color: var(--green); text-shadow: var(--glow-green); }
+
+/* ============ PALACE GRID (九宫) ============ */
+.palace-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  max-width: 700px;
+  margin: 20px auto;
+  aspect-ratio: 1;
+}
+
+.palace {
+  background: rgba(10,10,20,0.9);
+  border: 1px solid rgba(0,240,255,0.1);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.palace:hover {
+  border-color: rgba(0,240,255,0.4);
+  background: rgba(0,240,255,0.05);
+  z-index: 2;
+  transform: scale(1.02);
+}
+
+.palace.active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px rgba(0,240,255,0.2);
+}
+
+.palace.danger-palace {
+  border-color: rgba(255,34,68,0.3);
+}
+
+.palace.danger-palace:hover {
+  border-color: rgba(255,34,68,0.6);
+  box-shadow: 0 0 15px rgba(255,34,68,0.2);
+}
+
+.palace-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.palace.danger-palace .palace-name { color: var(--red); }
+
+.palace-element {
+  font-size: 9px;
+  color: rgba(0,240,255,0.5);
+}
+
+.palace-tags {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.palace-tag {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(0,240,255,0.08);
+  color: rgba(0,240,255,0.7);
+  border: 1px solid rgba(0,240,255,0.15);
+}
+
+.palace-tag.danger {
+  background: rgba(255,34,68,0.1);
+  color: rgba(255,34,68,0.8);
+  border-color: rgba(255,34,68,0.3);
+}
+
+.palace-tag.gold {
+  background: rgba(255,215,0,0.08);
+  color: rgba(255,215,0,0.8);
+  border-color: rgba(255,215,0,0.2);
+}
+
+.palace-tag.green {
+  background: rgba(0,255,136,0.08);
+  color: rgba(0,255,136,0.8);
+  border-color: rgba(0,255,136,0.2);
+}
+
+.palace-content {
+  flex: 1;
+  font-size: 9px;
+  line-height: 1.4;
+  color: rgba(255,255,255,0.7);
+  overflow: hidden;
+}
+
+.palace-content .highlight {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.palace-content .danger-highlight {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.palace-content .gold-highlight {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.palace-center {
+  background: linear-gradient(135deg, rgba(0,240,255,0.05), rgba(255,0,255,0.05));
+  border-color: rgba(255,215,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.palace-center .center-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  letter-spacing: 2px;
+}
+
+/* Palace grid order: 巽4 离9 坤2 / 震3 中5 兑7 / 艮8 坎1 乾6 */
+.palace-p4 { grid-column: 1; grid-row: 1; }
+.palace-p9 { grid-column: 2; grid-row: 1; }
+.palace-p2 { grid-column: 3; grid-row: 1; }
+.palace-p3 { grid-column: 1; grid-row: 2; }
+.palace-p5 { grid-column: 2; grid-row: 2; }
+.palace-p7 { grid-column: 3; grid-row: 2; }
+.palace-p8 { grid-column: 1; grid-row: 3; }
+.palace-p1 { grid-column: 2; grid-row: 3; }
+.palace-p6 { grid-column: 3; grid-row: 3; }
+
+/* ============ RELATIONSHIP ARROWS ============ */
+.relation-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.relation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(10,10,20,0.7);
+  border-left: 3px solid;
+}
+
+.relation-item.danger { border-left-color: var(--red); }
+.relation-item.warning { border-left-color: var(--gold); }
+.relation-item.good { border-left-color: var(--green); }
+
+.relation-source {
+  font-size: 12px;
+  color: #fff;
+  min-width: 120px;
+}
+
+.relation-arrow {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.relation-arrow.clay { color: var(--gold); text-shadow: var(--glow-gold); }
+.relation-arrow.harm { color: var(--red); text-shadow: var(--glow-red); }
+
+.relation-target {
+  font-size: 12px;
+  color: #fff;
+  min-width: 120px;
+}
+
+.relation-result {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.relation-result.danger { color: var(--red); }
+.relation-result.good { color: var(--green); }
+.relation-result.warning { color: var(--gold); }
+
+/* ============ ANALYSIS TEXT ============ */
+.analysis-block {
+  background: rgba(10,10,20,0.6);
+  border: 1px solid rgba(0,240,255,0.08);
+  padding: 20px;
+  margin: 12px 0;
+  line-height: 1.9;
+  font-size: 14px;
+  position: relative;
+}
+
+.analysis-block::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--cyan), var(--magenta));
+}
+
+.analysis-block.danger-block::before {
+  background: linear-gradient(180deg, var(--red), var(--magenta));
+}
+
+.analysis-block.gold-block::before {
+  background: linear-gradient(180deg, var(--gold), var(--cyan));
+}
+
+.analysis-block h3 {
+  font-size: 15px;
+  color: var(--cyan);
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+
+.analysis-block.danger-block h3 { color: var(--red); }
+.analysis-block.gold-block h3 { color: var(--gold); }
+
+.highlight-cyan { color: var(--cyan); font-weight: 700; }
+.highlight-red { color: var(--red); font-weight: 700; text-shadow: 0 0 6px rgba(255,34,68,0.4); }
+.highlight-gold { color: var(--gold); font-weight: 700; text-shadow: 0 0 6px rgba(255,215,0,0.4); }
+.highlight-green { color: var(--green); font-weight: 700; }
+
+/* ============ RISK LIST ============ */
+.risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.risk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,34,68,0.03);
+  border: 1px solid rgba(255,34,68,0.12);
+  transition: all 0.3s ease;
+}
+
+.risk-item:hover {
+  background: rgba(255,34,68,0.08);
+  border-color: rgba(255,34,68,0.25);
+}
+
+.risk-level {
+  font-size: 16px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.risk-content {
+  flex: 1;
+}
+
+.risk-label {
+  font-size: 13px;
+  color: var(--red);
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.risk-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.5;
+}
+
+/* ============ FOOTER ============ */
+.footer {
+  text-align: center;
+  padding: 40px 0;
+  border-top: 1px solid rgba(0,240,255,0.1);
+  margin-top: 40px;
+}
+
+.footer-text {
+  font-size: 11px;
+  color: rgba(0,240,255,0.4);
+  letter-spacing: 3px;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.footer-hex {
+  font-size: 10px;
+  color: rgba(255,0,255,0.3);
+  margin-top: 8px;
+  letter-spacing: 4px;
+  font-family: monospace;
+}
+
+/* ============ ANIMATIONS ============ */
+.fade-in {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+.stagger-7 { animation-delay: 0.7s; }
+.stagger-8 { animation-delay: 0.8s; }
+
+/* Floating particles */
+.particle {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: var(--cyan);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  animation: float-particle linear infinite;
+}
+
+@keyframes float-particle {
+  0% { opacity: 0; transform: translateY(100vh); }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-10vh); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .info-panel { grid-template-columns: repeat(2, 1fr); }
+  .palace-grid { max-width: 100%; }
+  .palace-content { font-size: 8px; }
+  .card-grid { grid-template-columns: 1fr; }
+  .relation-item { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- Particles -->
+<div id="particles"><div class="particle" style="left: 83.3677vw; animation-duration: 17.7586s; animation-delay: 0.242821s; width: 1.32254px; height: 1.32254px;"></div><div class="particle" style="left: 21.3574vw; animation-duration: 8.95207s; animation-delay: 9.52039s; width: 1.97935px; height: 1.97935px;"></div><div class="particle" style="left: 79.1326vw; animation-duration: 8.82211s; animation-delay: 9.44253s; width: 2.99412px; height: 2.99412px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 30.6611vw; animation-duration: 12.6949s; animation-delay: 6.1619s; width: 2.80474px; height: 2.80474px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 95.8794vw; animation-duration: 10.5365s; animation-delay: 8.02212s; width: 2.21783px; height: 2.21783px;"></div><div class="particle" style="left: 58.4502vw; animation-duration: 11.7571s; animation-delay: 7.18244s; width: 2.19723px; height: 2.19723px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 46.2356vw; animation-duration: 8.64577s; animation-delay: 6.99695s; width: 2.35016px; height: 2.35016px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 96.3248vw; animation-duration: 16.3656s; animation-delay: 4.58137s; width: 1.55946px; height: 1.55946px;"></div><div class="particle" style="left: 11.1644vw; animation-duration: 20.4642s; animation-delay: 2.40134s; width: 2.63287px; height: 2.63287px;"></div><div class="particle" style="left: 70.0243vw; animation-duration: 15.0649s; animation-delay: 6.87381s; width: 2.69979px; height: 2.69979px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 4.83913vw; animation-duration: 13.8489s; animation-delay: 6.63953s; width: 1.9476px; height: 1.9476px;"></div><div class="particle" style="left: 56.2617vw; animation-duration: 15.5678s; animation-delay: 3.35594s; width: 1.66259px; height: 1.66259px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 53.4557vw; animation-duration: 15.2427s; animation-delay: 7.62031s; width: 2.64895px; height: 2.64895px;"></div><div class="particle" style="left: 16.1216vw; animation-duration: 10.5627s; animation-delay: 1.83898s; width: 2.3486px; height: 2.3486px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 57.3207vw; animation-duration: 12.3294s; animation-delay: 3.12692s; width: 1.28543px; height: 1.28543px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 52.9917vw; animation-duration: 13.9273s; animation-delay: 8.81839s; width: 2.51108px; height: 2.51108px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 99.5159vw; animation-duration: 21.0227s; animation-delay: 6.31931s; width: 1.41652px; height: 1.41652px;"></div><div class="particle" style="left: 26.1844vw; animation-duration: 11.7597s; animation-delay: 6.44351s; width: 2.78397px; height: 2.78397px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 88.4904vw; animation-duration: 22.9578s; animation-delay: 0.867182s; width: 1.00519px; height: 1.00519px;"></div><div class="particle" style="left: 96.9949vw; animation-duration: 8.17285s; animation-delay: 3.30341s; width: 1.23771px; height: 1.23771px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 4.05068vw; animation-duration: 10.4211s; animation-delay: 0.0152622s; width: 1.4743px; height: 1.4743px;"></div><div class="particle" style="left: 78.0429vw; animation-duration: 17.686s; animation-delay: 3.16118s; width: 2.66614px; height: 2.66614px;"></div><div class="particle" style="left: 15.4052vw; animation-duration: 8.7189s; animation-delay: 0.406438s; width: 2.02959px; height: 2.02959px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 4.43191vw; animation-duration: 15.2579s; animation-delay: 7.84505s; width: 2.83501px; height: 2.83501px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 4.33989vw; animation-duration: 21.3899s; animation-delay: 7.83466s; width: 2.44652px; height: 2.44652px;"></div><div class="particle" style="left: 0.144059vw; animation-duration: 16.9794s; animation-delay: 5.45527s; width: 2.61772px; height: 2.61772px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 98.4352vw; animation-duration: 21.6185s; animation-delay: 6.19567s; width: 1.70129px; height: 1.70129px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 13.0305vw; animation-duration: 11.7649s; animation-delay: 3.86792s; width: 2.58409px; height: 2.58409px;"></div><div class="particle" style="left: 9.86527vw; animation-duration: 11.5035s; animation-delay: 2.45904s; width: 1.25067px; height: 1.25067px; background: rgb(255, 0, 255);"></div><div class="particle" style="left: 80.7821vw; animation-duration: 21.9435s; animation-delay: 9.13241s; width: 1.85013px; height: 1.85013px;"></div></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="bagua-symbol"></div>
+    <div class="title-main">奇门遁甲 · 阴盘测股</div>
+    <div class="title-sub">Yin Plate Stock Divination System</div>
+  </div>
+
+  <!-- INFO PANEL -->
+  <div class="info-panel fade-in stagger-1" style="animation-play-state: running;">
+    <div class="info-item">
+      <div class="info-label">排盘时间</div>
+      <div class="info-value">2026.05.04 14:28</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">局数</div>
+      <div class="info-value">阳遁9局</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">值符</div>
+      <div class="info-value">天禽星</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">值使</div>
+      <div class="info-value">死门</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">标的名</div>
+      <div class="info-value" style="color:var(--gold);text-shadow:var(--glow-gold);">小米集团</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">市场方向</div>
+      <div class="info-value" style="color:var(--red);text-shadow:var(--glow-red);">偏空 · 下跌</div>
+    </div>
+  </div>
+
+  <!-- VERDICT BANNER -->
+  <div class="verdict-banner verdict-danger fade-in stagger-2" style="animation-play-state: running;">
+    <div class="verdict-icon">⛔</div>
+    <div class="verdict-text">不 建 议 买 入</div>
+    <div class="verdict-desc">生门克日干 · 死门值使 · 四宫门迫 · 时干地网高张</div>
+  </div>
+
+  <!-- SECTION 1: 用神参数 -->
+  <div class="section fade-in stagger-3" style="animation-play-state: running;">
+    <div class="section-header">
+      <div class="section-number">01</div>
+      <div class="section-title">用神参数 · 核心用神提取</div>
+      <div class="section-line"></div>
+    </div>
+
+    <table class="div-table">
+      <thead>
+        <tr>
+          <th>用神</th>
+          <th>落宫</th>
+          <th>五行</th>
+          <th>天干格局</th>
+          <th>八门</th>
+          <th>九星</th>
+          <th>八神</th>
+          <th>特殊状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-info">值符</span></td>
+          <td>坎1宫</td>
+          <td>水</td>
+          <td>庚+己刑格<br>癸+己华盖地户</td>
+          <td>死门 <span class="badge badge-danger">门迫</span></td>
+          <td>芮禽·休</td>
+          <td>值符</td>
+          <td><span class="badge badge-danger">空亡</span> <span class="badge badge-danger">刑格</span> <span class="badge badge-danger">门迫</span> <span class="badge badge-danger">时格</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">甲子戊</span></td>
+          <td>乾6宫</td>
+          <td>金</td>
+          <td>戊+丁青龙耀明<br><small>值墓迫</small></td>
+          <td>景门 <span class="badge badge-danger">门迫</span></td>
+          <td>天英·休</td>
+          <td>九天</td>
+          <td><span class="badge badge-danger">墓绝</span> <span class="badge badge-danger">门迫</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">生门</span></td>
+          <td>离9宫</td>
+          <td>火</td>
+          <td>乙+戊利阴害阳</td>
+          <td>生门</td>
+          <td>天任·废</td>
+          <td>白虎</td>
+          <td><span class="badge badge-danger">白虎临生门</span> <span class="badge badge-warning">九星废</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">景门</span></td>
+          <td>乾6宫</td>
+          <td>金</td>
+          <td>同甲子戊</td>
+          <td>景门 <span class="badge badge-danger">门迫</span></td>
+          <td>天英·休</td>
+          <td>九天</td>
+          <td><span class="badge badge-danger">入墓</span> <span class="badge badge-danger">门迫</span></td>
+        </tr>
+        <tr class="danger">
+          <td><span class="badge badge-warning">值使(死门)</span></td>
+          <td>坎1宫</td>
+          <td>水</td>
+          <td>同值符</td>
+          <td>死门 <span class="badge badge-danger">门迫</span></td>
+          <td>芮禽·休</td>
+          <td>值符</td>
+          <td><span class="badge badge-danger">空亡</span> <span class="badge badge-danger">最凶之门</span></td>
+        </tr>
+        <tr class="danger">
+          <td><span class="badge badge-info">时干(己)</span></td>
+          <td>巽4宫</td>
+          <td>木</td>
+          <td>己+壬地网高张</td>
+          <td>休门</td>
+          <td>天蓬·旺</td>
+          <td>六合</td>
+          <td><span class="badge badge-warning">驿马</span> <span class="badge badge-danger">六仪击刑</span> <span class="badge badge-danger">大凶格</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">日干(戊)</span></td>
+          <td>乾6宫</td>
+          <td>金</td>
+          <td>同甲子戊</td>
+          <td>景门 <span class="badge badge-danger">门迫</span></td>
+          <td>天英·休</td>
+          <td>九天</td>
+          <td><span class="badge badge-danger">墓绝</span> <span class="badge badge-danger">门迫</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 2: 是否适合炒股 -->
+  <div class="section fade-in stagger-4" style="animation-play-state: running;">
+    <div class="section-header">
+      <div class="section-number red">02</div>
+      <div class="section-title red">适合炒股判定 · 四条全否</div>
+      <div class="section-line red"></div>
+    </div>
+
+    <div class="check-list">
+      <div class="check-item">
+        <div class="check-icon fail">✕</div>
+        <div class="check-text">
+          <strong>① 时干(己·巽木) 生日干(戊·乾金)?</strong><br>
+          巽木不生乾金，金克木 → <span class="check-result">不生，不利</span>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon fail">✕</div>
+        <div class="check-text">
+          <strong>② 生门(离火) 生日干(乾金)?</strong><br>
+          离火<span class="highlight-red">克</span>乾金 → 生门克日干 → <span class="check-result">投资必赔钱 · 大忌</span>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon fail">✕</div>
+        <div class="check-text">
+          <strong>③ 甲子戊/值符是否乘玄武?</strong><br>
+          戊乘九天(非玄武)，值符宫无玄武 → <span class="check-result">不满足</span>
+        </div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon fail">✕</div>
+        <div class="check-text">
+          <strong>④ 财运判断?</strong><br>
+          日干戊墓绝于乾宫 → 投资人力量极弱 → <span class="check-result">财运差，不宜入市</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: 大盘走势 -->
+  <div class="section fade-in stagger-5" style="animation-play-state: running;">
+    <div class="section-header">
+      <div class="section-number">03</div>
+      <div class="section-title">大盘走势 · 值符 + 景门分析</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="relation-box">
+      <div class="relation-item danger">
+        <div class="relation-source"><span class="highlight-cyan">值符</span> 坎1(水)</div>
+        <div class="relation-arrow harm">→ 克 →</div>
+        <div class="relation-target"><span class="highlight-gold">生门</span> 离9(火)</div>
+        <div class="relation-result danger">多方不做多 · 盘整下跌</div>
+      </div>
+      <div class="relation-item warning">
+        <div class="relation-source"><span class="highlight-cyan">值符</span> 坎1(水)</div>
+        <div class="relation-arrow clay">→ 生 →</div>
+        <div class="relation-target"><span class="highlight-gold">景门</span> 乾6(金)</div>
+        <div class="relation-result warning">生亦无力 · 景门入墓</div>
+      </div>
+    </div>
+
+    <div class="analysis-block danger-block">
+      <h3>值符宫 · 坎1宫深层分析</h3>
+      <p>上位值符临<span class="highlight-red">坎宫 · 水位 · 下跌</span>，庚+己=<span class="highlight-red">刑格</span>官司重刑凶格，癸+己=华盖地户阻碍不通。死门门迫+空亡 → 行情沉闷无力，虚实不定。九星芮禽休 → 大盘<span class="highlight-red">病殃殃无能</span>。</p>
+      <p style="margin-top:8px"><span class="highlight-gold">飘宫：</span>坎1宫先天走向坤2宫 → 辛+庚白虎出力(主客相残)，伤门门迫，玄武暗做 → 隐藏多方冲突、暗中被欺骗做空。</p>
+      <p><span class="highlight-gold">转宫：</span>后天坤土<span class="highlight-red">克</span>后天坎水 → 对值符减少能量。</p>
+      <p style="margin-top:8px;font-weight:700;"><span class="highlight-red">结论：大盘偏弱，表面值符似有支撑，实则空亡无力且刑格，下跌概率大。</span></p>
+    </div>
+
+    <div class="analysis-block danger-block">
+      <h3>景门 · 乾6宫 = 入墓</h3>
+      <p>景门落乾宫为<span class="highlight-red">入墓</span> → 行情处于停滞、小幅盘整状态，无大涨动力。景门+门迫 → 信息受到压制，行情不明朗。</p>
+    </div>
+  </div>
+
+  <!-- SECTION 4: 资金面 -->
+  <div class="section fade-in stagger-6" style="animation-play-state: running;">
+    <div class="section-header">
+      <div class="section-number gold">04</div>
+      <div class="section-title gold">资金面 · 甲子戊 + 生门分析</div>
+      <div class="section-line gold"></div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card danger-card">
+        <div class="card-title">甲子戊 · 乾6宫</div>
+        <div class="card-content">
+          <div><span class="label">状态：</span><span class="value danger">墓绝 · 资金极度休囚</span></div>
+          <div><span class="label">格局：</span><span class="value">青龙耀明 · <span class="highlight-red">值墓迫招是非</span></span></div>
+          <div><span class="label">八神：</span><span class="value cyan">九天 → 冲高防回落 · <span class="highlight-red">典型诱多</span></span></div>
+          <div><span class="label">九星：</span><span class="value">天英·休 → 庄家表面风风火火实际无力</span></div>
+          <div style="margin-top:8px;font-weight:700;color:var(--red);">庄家看似积极(九天+青龙)，实则墓绝诱多出货!</div>
+        </div>
+      </div>
+      <div class="card danger-card">
+        <div class="card-title">生门 · 离9宫</div>
+        <div class="card-content">
+          <div><span class="label">状态：</span><span class="value">乙+戊=<span class="highlight-red">利阴害阳</span> · 门逢凶迫 → 财破人伤</span></div>
+          <div><span class="label">九星：</span><span class="value">天任·废 → 慢牛走势但废休无力</span></div>
+          <div><span class="label">八神：</span><span class="value danger">白虎 → 暴涨或暴跌危险信号</span></div>
+          <div style="margin-top:8px;font-weight:700;color:var(--red);">生门克日干(离火克乾金) · 投资必赔!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relation-box">
+      <div class="relation-item danger">
+        <div class="relation-source"><span class="highlight-gold">生门</span> 离9(火)</div>
+        <div class="relation-arrow harm">→ 克 →</div>
+        <div class="relation-target"><span class="highlight-gold">甲子戊</span> 乾6(金)</div>
+        <div class="relation-result danger">利润反噬资金</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: 九宫排盘 -->
+  <div class="section fade-in stagger-7" style="animation-play-state: running;">
+    <div class="section-header">
+      <div class="section-number">05</div>
+      <div class="section-title">九宫盘局 · 用神落宫总览</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="palace-grid">
+      <!-- 巽4宫 -->
+      <div class="palace palace-p4 danger-palace">
+        <div class="palace-name">巽4宫 <span class="palace-element">木</span></div>
+        <div class="palace-content">
+          <span class="danger-highlight">庚+己刑格</span><br>
+          <span class="danger-highlight">癸+己华盖地户</span><br>
+          休门 · 天蓬(旺) · 六合<br>
+          <span class="danger-highlight">时干己 · 地网高张</span><br>
+          <span class="danger-highlight">驿马 · 击刑</span>
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag danger">地网高张</span>
+          <span class="palace-tag danger">击刑</span>
+          <span class="palace-tag">驿马</span>
+        </div>
+      </div>
+      <!-- 离9宫 -->
+      <div class="palace danger-palace">
+        <div class="palace-name">离9宫 <span class="palace-element">火 · 行情火爆</span></div>
+        <div class="palace-content">
+          乙+戊<span class="danger-highlight">利阴害阳</span><br>
+          <span class="highlight-cyan">生门</span> · 天任(废) · <span class="danger-highlight">白虎</span><br>
+          <span class="danger-highlight">白虎临生门 · 暴涨暴跌</span><br>
+          九星废 · 无力
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag green">生门</span>
+          <span class="palace-tag danger">白虎</span>
+          <span class="palace-tag danger">利阴害阳</span>
+        </div>
+      </div>
+      <!-- 坤2宫 -->
+      <div class="palace danger-palace">
+        <div class="palace-name">坤2宫 <span class="palace-element">土 · 盘整</span></div>
+        <div class="palace-content">
+          辛+庚<span class="danger-highlight">白虎出力</span><br>
+          辛+癸<span class="danger-highlight">天牢华盖</span><br>
+          伤门<span class="danger-highlight">门迫</span> · 天冲(休)<br>
+          玄武 · 主客相残
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag danger">门迫</span>
+          <span class="palace-tag danger">白虎出力</span>
+          <span class="palace-tag">玄武</span>
+        </div>
+      </div>
+      <!-- 震3宫 -->
+      <div class="palace">
+        <div class="palace-name">震3宫 <span class="palace-element">木 · 不稳振幅大</span></div>
+        <div class="palace-content">
+          丁+辛<span class="gold-highlight">朱雀入狱</span><br>
+          <span class="highlight-cyan">开门</span><span class="danger-highlight">门迫</span> · 天心(休)<br>
+          太阴 · 真诈云遁
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag danger">门迫</span>
+          <span class="palace-tag gold">真诈</span>
+          <span class="palace-tag gold">云遁</span>
+        </div>
+      </div>
+      <!-- 中5宫 -->
+      <div class="palace palace-center">
+        <div class="center-text">阳遁9局<br>天禽值符<br>死门值使</div>
+      </div>
+      <!-- 兑7宫 -->
+      <div class="palace">
+        <div class="palace-name">兑7宫 <span class="palace-element">金 · 行情变坏</span></div>
+        <div class="palace-content">
+          壬+丙<span class="danger-highlight">水蛇入火</span><br>
+          杜门 · 天辅(囚) · 九地<br>
+          官灾刑禁络绎不绝
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag danger">水蛇入火</span>
+          <span class="palace-tag">九地</span>
+        </div>
+      </div>
+      <!-- 艮8宫 -->
+      <div class="palace danger-palace">
+        <div class="palace-name">艮8宫 <span class="palace-element">土</span></div>
+        <div class="palace-content">
+          丙+乙<span class="gold-highlight">日月并行</span><br>
+          惊门 · 天柱(废) · 腾蛇<br>
+          <span class="danger-highlight">空亡</span>
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag danger">空亡</span>
+          <span class="palace-tag gold">日月并行</span>
+          <span class="palace-tag">腾蛇</span>
+        </div>
+      </div>
+      <!-- 坎1宫 -->
+      <div class="palace danger-palace active">
+        <div class="palace-name">坎1宫 <span class="palace-element">水 · 下跌</span></div>
+        <div class="palace-content">
+          <span class="danger-highlight">庚+己刑格</span><br>
+          <span class="danger-highlight">癸+己华盖地户</span><br>
+          <span class="danger-highlight">死门门迫 · 值使门</span><br>
+          芮禽(休) · 值符<br>
+          天乙天蓬
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag danger">空亡</span>
+          <span class="palace-tag danger">刑格</span>
+          <span class="palace-tag danger">门迫</span>
+          <span class="palace-tag danger">时格</span>
+          <span class="palace-tag">值符</span>
+          <span class="palace-tag danger">死门</span>
+        </div>
+      </div>
+      <!-- 乾6宫 -->
+      <div class="palace danger-palace">
+        <div class="palace-name">乾6宫 <span class="palace-element">金 · 回落</span></div>
+        <div class="palace-content">
+          戊+丁<span class="gold-highlight">青龙耀明</span><br>
+          <span class="danger-highlight">景门门迫</span><br>
+          天英(休) · 九天<br>
+          <span class="danger-highlight">甲子戊·日干·景门</span><br>
+          <span class="danger-highlight">戊墓地绝</span>
+        </div>
+        <div class="palace-tags">
+          <span class="palace-tag gold">青龙耀明</span>
+          <span class="palace-tag danger">门迫</span>
+          <span class="palace-tag danger">墓绝</span>
+          <span class="palace-tag">九天</span>
+          <span class="palace-tag gold">戊·景门</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: 个股涨跌 -->
+  <div class="section fade-in stagger-8" style="animation-play-state: running;">
+    <div class="section-header">
+      <div class="section-number red">06</div>
+      <div class="section-title red">五用神逐一诊断</div>
+      <div class="section-line red"></div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card danger-card">
+        <div class="card-title">① 值符宫 · 大盘态势</div>
+        <div class="card-content">
+          大盘在底部(坎水·下跌位)，刑格+死门门迫+空亡 → <span class="highlight-red">大盘虚弱，执行力极差</span>。飘宫显示隐藏玄武暗做、主客相残。后天坤克坎，能量减损。<br><br><span class="highlight-red">结论：大盘偏弱，下跌概率大。</span>
+        </div>
+      </div>
+      <div class="card danger-card">
+        <div class="card-title">② 戊宫 · 庄家动态</div>
+        <div class="card-content">
+          戊<span class="highlight-red">墓绝</span> → 庄家资金极度休囚，九天+青龙耀明墓迫 → <span class="highlight-red">典型诱多出货手法</span>，冲高即回落。表面放开手脚大投，实则看准机会骗散户。<br><br><span class="highlight-red">结论：庄家诱多，不可跟风。</span>
+        </div>
+      </div>
+      <div class="card danger-card">
+        <div class="card-title">③ 时干己 · 股票本身</div>
+        <div class="card-content">
+          己+壬=<span class="highlight-red">地网高张</span>大凶格！陷阱明显。天蓬旺→大涨大跌但方向危险。驿马→有变动但方向不定。六合→多空博弈。<br>离火泄巽木→股票能量被消耗。<br><br><span class="highlight-red">结论：股票存在隐蔽陷阱，危险!</span>
+        </div>
+      </div>
+      <div class="card danger-card">
+        <div class="card-title">④ 日干戊 · 投资人</div>
+        <div class="card-content">
+          日干戊与庄家戊同宫(乾6) → 已关注或持有此股。但戊<span class="highlight-red">墓绝</span> → 投资人力量极弱。九天+青龙耀明墓迫→看到机会实际是陷阱。<br><br><span class="highlight-red">结论：投资人状态极差，不宜操作。</span>
+        </div>
+      </div>
+      <div class="card danger-card">
+        <div class="card-title">⑤ 值使死门 · 行情走势</div>
+        <div class="card-content">
+          <span class="highlight-red">死门 = 最凶之门</span> → 行情沉闷，投资失败。死门落坎1 → 下跌趋势。空亡+门迫→雪上加霜。<br>坎主1数，衰取1 → 行情低迷约1日。<br><br><span class="highlight-red">结论：值使死门控制全局，死亡状态，无生机。</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: 买入可行性 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number red">07</div>
+      <div class="section-title red">买入可行性 · 全项否决</div>
+      <div class="section-line red"></div>
+    </div>
+
+    <table class="div-table">
+      <thead>
+        <tr>
+          <th>判定条件</th>
+          <th>实际情况</th>
+          <th>结论</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="danger">
+          <td>生门离火 生日干乾金?</td>
+          <td>离火<span class="highlight-red">克</span>乾金</td>
+          <td><span class="badge badge-danger">投资必赔钱 · 核心大忌</span></td>
+        </tr>
+        <tr class="danger">
+          <td>时干己巽木 生日干乾金?</td>
+          <td>巽木与乾金互克</td>
+          <td><span class="badge badge-danger">不利</span></td>
+        </tr>
+        <tr class="danger">
+          <td>值符与生门关系?</td>
+          <td>坎水<span class="highlight-red">克</span>离火</td>
+          <td><span class="badge badge-danger">多方不做多 · 盘整下跌</span></td>
+        </tr>
+        <tr class="danger">
+          <td>生门与戊关系?</td>
+          <td>离火<span class="highlight-red">克</span>乾金</td>
+          <td><span class="badge badge-danger">利润反噬资金</span></td>
+        </tr>
+        <tr class="danger">
+          <td>景门状态?</td>
+          <td>景门入墓</td>
+          <td><span class="badge badge-danger">行情停滞</span></td>
+        </tr>
+        <tr class="danger">
+          <td>四宫门迫?</td>
+          <td>坎/坤/震/乾四宫门迫</td>
+          <td><span class="badge badge-danger">凶象极重</span></td>
+        </tr>
+        <tr class="danger">
+          <td>时干格局?</td>
+          <td>己+壬地网高张</td>
+          <td><span class="badge badge-danger">隐蔽陷阱</span></td>
+        </tr>
+        <tr class="danger">
+          <td>值使门?</td>
+          <td>死门(最凶)</td>
+          <td><span class="badge badge-danger">行情死亡</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 8: 操作建议 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number gold">08</div>
+      <div class="section-title gold">操作建议</div>
+      <div class="section-line gold"></div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card gold-card">
+        <div class="card-title">操作方向</div>
+        <div class="card-content" style="font-size:20px;text-align:center;padding:20px 0;">
+          <div class="value danger" style="font-size:28px;text-shadow:var(--glow-red);">⛔ 不买入 · 观望</div>
+          <div style="margin-top:10px;font-size:13px;color:rgba(255,255,255,0.5);">如已持有则逢高卖出止盈止损</div>
+        </div>
+      </div>
+      <div class="card gold-card">
+        <div class="card-title">持仓周期</div>
+        <div class="card-content" style="font-size:20px;text-align:center;padding:20px 0;">
+          <div class="value danger" style="font-size:28px;">极短线 · 危险</div>
+          <div style="margin-top:10px;font-size:13px;color:rgba(255,255,255,0.5);">戊墓绝+死门值使 不建议任何操作</div>
+        </div>
+      </div>
+      <div class="card gold-card">
+        <div class="card-title">关键时间</div>
+        <div class="card-content" style="text-align:center;padding:15px 0;">
+          <div><span class="label">值使坎1宫</span> → <span class="value">衰取1数 · 约1日低迷</span></div>
+          <div style="margin-top:8px;"><span class="label">空亡填实</span> → <span class="value">子日或午日冲实</span></div>
+          <div style="margin-top:8px;"><span class="label">驿马巽宫</span> → <span class="value">辰巳日可能有波动但方向向下</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis-block gold-block">
+      <h3>明日(5月5日)预判</h3>
+      <p>谷雨节气属<span class="highlight-cyan">木旺土死</span>，木相关板块有短暂支撑。但：</p>
+      <p>· 值符空亡+刑格死门 → <span class="highlight-red">大盘无实质支撑</span></p>
+      <p>· 戊墓绝+九天诱多 → <span class="highlight-red">庄家骗线出货</span></p>
+      <p>· 景门入墓 → <span class="highlight-red">行情停滞</span></p>
+      <p>· 生门克日干 → <span class="highlight-red">买入必亏(最核心凶兆)</span></p>
+    </div>
+  </div>
+
+  <!-- SECTION 9: 风险提示 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number red">09</div>
+      <div class="section-title red">风险提示 · 九大凶象</div>
+      <div class="section-line red"></div>
+    </div>
+
+    <div class="risk-list">
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">生门克日干 · 投资必赔钱</div>
+          <div class="risk-desc">离火克乾金，最核心凶兆，买入必亏</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">四宫门迫 · 大局极凶</div>
+          <div class="risk-desc">坎死门迫、坤伤门迫、震开门迫、乾景门迫</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">值符空亡 · 大盘虚浮</div>
+          <div class="risk-desc">主脑空亡无力，无实质支撑</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">时干地网高张 · 股票有隐蔽陷阱</div>
+          <div class="risk-desc">己+壬大凶格，狡童佚女奸情杀伤</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">死门值使 · 行情死亡状态</div>
+          <div class="risk-desc">死门为最凶之门，行情沉闷投资失败</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">庚+己刑格 · 大盘受阻</div>
+          <div class="risk-desc">官司重刑，万事受阻</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">戊墓绝+九天 · 庄家诱多出货</div>
+          <div class="risk-desc">资金墓绝表面冲高实际出货，冲高即回落</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">乙+戊利阴害阳 · 财破人伤</div>
+          <div class="risk-desc">生门宫内凶格，发财反伤身</div>
+        </div>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level">⚠️</div>
+        <div class="risk-content">
+          <div class="risk-label">白虎临生门 · 暴涨暴跌信号</div>
+          <div class="risk-desc">白虎为危险信号，杀伤力强</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL VERDICT -->
+  <div class="verdict-banner verdict-danger" style="margin-top:50px;">
+    <div class="verdict-icon">⛔</div>
+    <div class="verdict-text">最 终 结 论</div>
+    <div style="font-size:clamp(18px,3vw,28px);color:#fff;font-weight:900;margin:15px 0;letter-spacing:4px;position:relative;z-index:1;">
+      不 建 议 买 入 小 米 股 票
+    </div>
+    <div class="verdict-desc" style="max-width:700px;margin:0 auto;line-height:1.8;">
+      生门克日干为最核心凶兆，叠加死门值使、四宫门迫、时干地网高张、戊墓绝九天诱多、值符空亡刑格，此盘多方不做多，空方压制强，明日大概率下跌或盘整，买入必亏。
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-text">QMDJ YIN PLATE DIVINATION SYSTEM v1.0</div>
+    <div class="footer-hex">0x4B49 0x5148 0x95E8 0x9041 0x7532</div>
+  </div>
+
+</div>
+
+<script>
+// Create floating particles
+const particlesContainer = document.getElementById('particles');
+for (let i = 0; i < 30; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.left = Math.random() * 100 + 'vw';
+  p.style.animationDuration = (8 + Math.random() * 15) + 's';
+  p.style.animationDelay = Math.random() * 10 + 's';
+  p.style.width = (1 + Math.random() * 2) + 'px';
+  p.style.height = p.style.width;
+  if (Math.random() > 0.5) {
+    p.style.background = '#ff00ff';
+  }
+  particlesContainer.appendChild(p);
+}
+
+// Intersection Observer for fade-in animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = 'running';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  observer.observe(el);
+});
+
+// Make fade-in elements visible immediately for better UX
+setTimeout(() => {
+  document.querySelectorAll('.fade-in').forEach(el => {
+    el.style.animationPlayState = 'running';
+  });
+}, 100);
+</script>
+
+
+</body></html>
